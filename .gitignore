@@ -1,0 +1,11 @@
+# Datasets grandes — no subir a GitHub
+dataset/household_power_consumption.txt
+
+# Experimentos generados localmente
+experiments/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+.env

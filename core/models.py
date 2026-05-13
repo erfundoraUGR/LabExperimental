@@ -301,15 +301,27 @@ def build_model(config):
         )
 
     if model_type == "TRANSFORMER":
-        if hasattr(config, "TRANSFORMER_HIDDEN_SIZES"):
-            hidden_sizes = config.TRANSFORMER_HIDDEN_SIZES
+        # Support separate d_model + FC layers (used by Optuna YAML tuning)
+        if hasattr(config, "TRANSFORMER_D_MODEL"):
+            d_model = int(config.TRANSFORMER_D_MODEL)
+            fc_layers = getattr(config, "TRANSFORMER_FC_HIDDEN_SIZES", [])
+            if isinstance(fc_layers, int):
+                fc_layers = [fc_layers]
+            hidden_sizes = [d_model] + list(fc_layers)
+        elif hasattr(config, "TRANSFORMER_HIDDEN_SIZES"):
+            hidden_sizes = list(config.TRANSFORMER_HIDDEN_SIZES)
         else:
-            hidden_size = getattr(config, "TRANSFORMER_HIDDEN_SIZE", 64)
-            hidden_sizes = [hidden_size]
+            hidden_sizes = [getattr(config, "TRANSFORMER_HIDDEN_SIZE", 64)]
 
         dropout = getattr(config, "TRANSFORMER_DROPOUT", 0.0)
         num_heads = getattr(config, "TRANSFORMER_NUM_HEADS", 4)
-        num_layers = getattr(config, "TRANSFORMER_NUM_LAYERS", 2)
+        num_layers = getattr(config, "TRANSFORMER_NUM_LAYERS", 1)
+
+        # d_model must be divisible by num_heads — round up if needed
+        d_model = hidden_sizes[0]
+        if d_model % num_heads != 0:
+            d_model = ((d_model // num_heads) + 1) * num_heads
+            hidden_sizes = [d_model] + hidden_sizes[1:]
 
         return TransformerModel(
             input_size=1,

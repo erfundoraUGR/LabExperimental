@@ -199,6 +199,22 @@ class OptunaSimpleTuner:
                         )
                     params[param_name] = hidden_sizes
 
+            elif param_type == "int_multi":
+                # Como categorical_multi pero con rango entero continuo
+                num_layers_ref = param_config.get("num_layers_ref")
+                if num_layers_ref and num_layers_ref in params:
+                    num_layers = params[num_layers_ref]
+                    min_val = param_config.get("min")
+                    max_val = param_config.get("max")
+                    hidden_sizes = []
+                    for i in range(num_layers):
+                        hidden_sizes.append(
+                            trial.suggest_int(
+                                f"{param_name}_{i}", min_val, max_val
+                            )
+                        )
+                    params[param_name] = hidden_sizes
+
         return params
 
     def _apply_params_to_config(self, config: Config, params: Dict[str, Any]):
